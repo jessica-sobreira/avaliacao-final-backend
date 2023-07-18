@@ -4,6 +4,7 @@
   "description": "",
   "author": "github.com/jessica-sobreira",
   "type": "module",
+  "start": "node src/index",
   "dependencies": {
     "express": "^4.18.2"
   }
