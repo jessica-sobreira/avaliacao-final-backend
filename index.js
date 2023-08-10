@@ -13,16 +13,38 @@ app.get("/", function (requisicao, resposta) {
 
 const usuarios = [];
 
+const recados = [{
+  titulo: "titulo1",
+  descricao: "descricao1",
+  conteudo: "conteudo1"
+},
+{
+  titulo: "titulo2",
+  descricao: "descricao2",
+  conteudo: "conteudo2"
+},
+{
+  titulo: "titulo3",
+  descricao: "descricao3",
+  conteudo: "conteudo3"
+},
+{
+  titulo: "titulo4",
+  descricao: "descricao4",
+  conteudo: "conteudo4"
+}];
+
+
 let id = 0;
 
 //Rota para criar um usuário
 app.post("/usuarios", (requisicao, resposta) => {
   const nome = requisicao.body.nome;
   const senha = requisicao.body.senha;
-  const usuario = {id, nome, senha, recados: []};
+  const usuario = { id, nome, senha, recados: [] };
   usuarios.push(usuario);
   id++;
-  resposta.status(201).json({mensagem: "Usuario criado com sucesso!", usuario: usuario});
+  resposta.status(201).json({ mensagem: "Usuario criado com sucesso!", usuario: usuario });
 });
 
 //Rota para listar todos os usuários
@@ -36,9 +58,9 @@ app.get("/usuarios/:id", (requisicao, resposta) => {
   const usuario = usuarios.find((e) => e.id === parseInt(id));
 
   if (!usuario) {
-    return resposta.status(404).json({error: "Usuário não encontrado"});
+    return resposta.status(404).json({ error: "Usuário não encontrado" });
   }
-  return resposta.status(200).json({mensagem: "Usuário encontrado!", usuario: usuario});
+  return resposta.status(200).json({ mensagem: "Usuário encontrado!", usuario: usuario });
 });
 
 //Rota para atualizar o usuário pelo ID
@@ -49,7 +71,7 @@ app.put("/usuarios/:id", (requisicao, resposta) => {
   const usuario = usuarios.find((e) => e.id === parseInt(id));
 
   if (!usuario) {
-    return resposta.status(404).json({error: "Usuario não encontrado"});
+    return resposta.status(404).json({ error: "Usuario não encontrado" });
   }
   if (nome && senha) {
     usuario.nome = nome;
@@ -60,7 +82,7 @@ app.put("/usuarios/:id", (requisicao, resposta) => {
     usuario.senha = senha;
   }
 
-  return resposta.status(200).json({mensagem: "Usuario atualizado", usuario: usuario});
+  return resposta.status(200).json({ mensagem: "Usuario atualizado", usuario: usuario });
 });
 
 //Rota para deletar um usuário pelo ID
@@ -69,10 +91,10 @@ app.delete("/usuarios/:id", (requisicao, resposta) => {
   const usuario = usuarios.findIndex((e) => e.id === parseInt(id));
 
   if (usuario === -1) {
-    return resposta.status(404).json({error: "Usuario não encontrado"});
+    return resposta.status(404).json({ error: "Usuario não encontrado" });
   }
   usuarios.splice(usuario, 1);
-  return resposta.status(200).json({mensagem: "Usuario deletado"});
+  return resposta.status(200).json({ mensagem: "Usuario deletado" });
 });
 
 let idRecado = 0;
@@ -86,32 +108,47 @@ app.post("/recados/:id", (requisicao, resposta) => {
   const usuario = usuarios.find((e) => e.id === parseInt(id));
 
   if (!usuario) {
-    return resposta.status(404).json({error: "Usuario não encotrado" });
+    return resposta.status(404).json({ error: "Usuario não encotrado" });
   }
   usuario.recados.push(recado);
   idRecado++;
-  return resposta.status(201).json({mensagem: "Recado criado com sucesso!", usuario});
+  return resposta.status(201).json({ mensagem: "Recado criado com sucesso!", usuario });
 });
 
-//Rota para buscar recados de um usuário
+// Rota para buscar recados de um usuário com paginação
 app.get("/recados/:id", (requisicao, resposta) => {
   const id = requisicao.params.id;
   const usuario = usuarios.find((usuario) => usuario.id === parseInt(id));
-  if (!usuario) {
-    resposta.status(404);
-    resposta.send({error: "Usuario não encontrado"});
-  }
-  resposta.status(200);
-  resposta.send({mensagem: "Recados encontrados", recados: usuario.recados});
-});
 
+  if (!usuario) {
+    return resposta.status(404).json({ error: "Usuario não encontrado" });
+  }
+
+  const page = parseInt(requisicao.query.page) || 1; // Página padrão 1
+  const limit = parseInt(requisicao.query.limit) || 5; // Limite padrão 5 recados por página
+
+  const startIndex = (page - 1) * limit;
+  const endIndex = page * limit;
+
+  const paginatedeRecados = usuario.recados.slice(startIndex, endIndex);
+
+  resposta.status(200).json({
+    mensagem: "Recados encontrados",
+    paginaAtual: page,
+    recados: paginatedeRecados.map(recado => ({
+      titulo: recado.titulo,
+      descricao: recado.descricao,
+      conteudo: recado.conteudo
+    })),
+  });
+});
 //Rota para editar um recado pelo ID
 app.put("/recados/:id/:idRecado", (requisicao, resposta) => {
   const usuarioId = requisicao.params.id;
   const usuario = usuarios.find((usuario) => usuario.id === parseInt(usuarioId));
   if (!usuario) {
     resposta.status(404);
-    resposta.send({error: "Usuario não encontrado"});
+    resposta.send({ error: "Usuario não encontrado" });
   }
 
   const id = requisicao.params.idRecado;
@@ -121,14 +158,14 @@ app.put("/recados/:id/:idRecado", (requisicao, resposta) => {
 
   if (!recado) {
     resposta.status(404);
-    resposta.send({error: "Recado não encontrado"});
+    resposta.send({ error: "Recado não encontrado" });
   }
 
   recado.titulo = titulo || recado.titulo;
   recado.descricao = descricao || recado.descricao;
 
   resposta.status(200);
-  resposta.send({mensagem: "Recado alterado", recado: recado});
+  resposta.send({ mensagem: "Recado alterado", recado: recado });
 });
 
 //Rota para deletar um recado pelo ID
@@ -137,14 +174,14 @@ app.delete("/recados/:id/:idRecado", (requisicao, resposta) => {
   const usuario = usuarios.find((usuario) => usuario.id === parseInt(usuarioId));
   if (!usuario) {
     resposta.status(404);
-    resposta.send({error: "Usuario não encontrado"});
+    resposta.send({ error: "Usuario não encontrado" });
   }
   const id = requisicao.params.idRecado;
   const recado = usuario.recados.find((recado) => recado.id === parseInt(id));
 
   if (!recado) {
     resposta.status(404);
-    resposta.send({error: "Recado não encontrado"});
+    resposta.send({ error: "Recado não encontrado" });
   }
 
   const novosRecados = usuario.recados.filter(
@@ -153,10 +190,10 @@ app.delete("/recados/:id/:idRecado", (requisicao, resposta) => {
   usuario.recados = novosRecados;
 
   resposta.status(200);
-  resposta.send({mensagem: "Recado deletado", recados: novosRecados});
+  resposta.send({ mensagem: "Recado deletado", recados: novosRecados });
 });
 
 
 app.listen(3000, function () {
-    console.log("servidor rodando na porta 3000: url http://localhost:3000")
+  console.log("servidor rodando na porta 3000: url http://localhost:3000")
 });
